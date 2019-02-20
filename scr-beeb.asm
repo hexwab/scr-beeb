@@ -760,7 +760,7 @@ PRINT "  Free =", ~(boot_start - P%)
 PRINT "  DLL Jump Table Size =", ~(beeb_dll_end - beeb_dll_start)
 PRINT "  Core Data Size =", ~(core_data_end - core_data_start)
 PRINT "--------"
-SAVE "Core", core_start, P%, 0
+SAVE "build/Core", core_start, P%, 0
 PRINT "--------"
 
 CLEAR &3f00, &8000
@@ -1349,7 +1349,7 @@ PRINT "  End =", ~boot_end
 PRINT "  Size =", ~(boot_end - boot_start)
 PRINT "  Entry =", ~scr_entry
 PRINT "--------"
-SAVE "Loader2", boot_start, boot_end, scr_entry
+SAVE "build/Loader2", boot_start, boot_end, scr_entry
 PRINT "--------"
 
 ; *****************************************************************************
@@ -1489,7 +1489,7 @@ PRINT "  Start =", ~boot_data_start
 PRINT "  End =", ~boot_data_end
 PRINT "  Size =", ~(boot_data_end - boot_data_start)
 PRINT "--------"
-SAVE "Data", boot_data_start, boot_data_end, 0
+SAVE "build/Data", boot_data_start, boot_data_end, 0
 PRINT "--------"
 
 ; *****************************************************************************
@@ -1529,7 +1529,7 @@ PRINT "  End =", ~cart_end
 PRINT "  Size =", ~(cart_end - cart_start)
 PRINT "  Free =", ~(&C000 - cart_end)
 PRINT "--------"
-SAVE "Cart", cart_start, cart_end, 0
+SAVE "build/Cart", cart_start, cart_end, 0
 PRINT "--------"
 
 ; *****************************************************************************
@@ -1551,7 +1551,7 @@ PRINT "  End =", ~beeb_graphics_end
 PRINT "  Size =", ~(beeb_graphics_end - beeb_graphics_start)
 PRINT "  Free =", ~(&C000 - beeb_graphics_end)
 PRINT "--------"
-SAVE "Beebgfx", beeb_graphics_start, beeb_graphics_end, 0
+SAVE "build/Beebgfx", beeb_graphics_start, beeb_graphics_end, 0
 PRINT "--------"
 
 ; *****************************************************************************
@@ -1573,7 +1573,7 @@ PRINT "  End =", ~beeb_music_end
 PRINT "  Size =", ~(beeb_music_end - beeb_music_start)
 PRINT "  Free =", ~(&C000 - beeb_music_end)
 PRINT "--------"
-SAVE "Beebmus", beeb_music_start, beeb_music_end, 0
+SAVE "build/Beebmus", beeb_music_start, beeb_music_end, 0
 PRINT "--------"
 
 ; *****************************************************************************
@@ -1611,7 +1611,7 @@ PRINT "  Free =", ~(&DF00 - hazel_end)
 ; print "data_start =",~boot_data_start
 ; print "end of HAZEL data when loaded =", ~(disksys_loadto_addr+(hazel_end-hazel_start))
 PRINT "--------"
-SAVE "Hazel", hazel_data_start, hazel_data_end, 0
+SAVE "build/Hazel", hazel_data_start, hazel_data_end, 0
 PRINT "--------"
 
 ; Manual guard, as hazel_end and hazel_start are forward references
@@ -1654,7 +1654,7 @@ PRINT "  End =", ~kernel_end
 PRINT "  Size =", ~(kernel_end - kernel_start)
 PRINT "  Free =", ~(&C000 - kernel_end)
 PRINT "-------"
-SAVE "Kernel", kernel_start, kernel_end, 0
+SAVE "build/Kernel", kernel_start, kernel_end, 0
 PRINT "-------"
 
 ; *****************************************************************************
@@ -1664,7 +1664,7 @@ CLEAR $0,$8000
 ORG $3000
 GUARD $8000
 INCBIN "build/scr-beeb-title-screen.dat"
-SAVE "Title",$3000,$8000,0
+SAVE "build/Title",$3000,$8000,0
 
 ; *****************************************************************************
 ; Title screen loader
@@ -1747,18 +1747,5 @@ PRINT "  End =", ~title_screen_loader_end
 PRINT "  Size =", ~(title_screen_loader_end - title_screen_loader_start)
 PRINT "  Free =", ~(&3000 - title_screen_loader_end)
 PRINT "-------"
-SAVE "Loader",title_screen_loader_start,title_screen_loader_end
+SAVE "build/Loader",title_screen_loader_start,title_screen_loader_end
 PRINT "-------"
-
-; *****************************************************************************
-; Additional files for the disk...
-; *****************************************************************************
-
-IF _DEBUG
-PUTFILE "data/Hall.bin", "HALL", &0
-PUTFILE "data/KCSave.bin", "KCSAVE", &0
-PUTFILE "data/MPSave.bin", "MPSAVE", &0
-ENDIF
-
-PUTFILE "doc/readme.txt", "Readme", &0
-PUTFILE "doc/Guide.txt", "Guide", &0
