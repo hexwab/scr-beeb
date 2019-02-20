@@ -10,7 +10,7 @@ PUTFILE "build/Beebgfx", "Beebgfx", &8000, 0
 PUTFILE "build/Beebmus", "Beebmus", &8800, 0
 PUTFILE "build/Hazel", "Hazel", &CB00, 0
 PUTFILE "build/Kernel", "Kernel", &8000, 0
-PUTFILE "build/Title", "Title", &3000, 0
+PUTFILE "build/scr-beeb-title-screen.dat", "Title", &3000, 0
 PUTFILE "build/Loader", "Loader", &1900, &1900
 
 ; *****************************************************************************
