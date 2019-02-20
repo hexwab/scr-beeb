@@ -823,28 +823,28 @@ GUARD disksys_loadto_addr
 	LDX #LO(cart_filename)
 	LDY #HI(cart_filename)
 	LDA #HI(cart_start)
-	JSR disksys_load_file
+	JSR disksys_decrunch_file
 
 	SWR_SELECT_SLOT BEEB_KERNEL_SLOT
 
 	LDX #LO(kernel_filename)
 	LDY #HI(kernel_filename)
 	LDA #HI(kernel_start)
-	JSR disksys_load_file
+	JSR disksys_decrunch_file
 
 	SWR_SELECT_SLOT BEEB_GRAPHICS_SLOT
 	
 	ldx #lo(beeb_graphics_filename)
 	ldy #hi(beeb_graphics_filename)
 	lda #hi(beeb_graphics_start)
-	jsr disksys_load_file
+	jsr disksys_decrunch_file
 
 	SWR_SELECT_SLOT BEEB_MUSIC_SLOT
 	
 	ldx #lo(beeb_music_filename)
 	ldy #hi(beeb_music_filename)
 	lda #hi(beeb_music_start)
-	jsr disksys_load_file
+	jsr disksys_decrunch_file
 
 	\\ HAZEL must be last as stomping on FS workspace
 

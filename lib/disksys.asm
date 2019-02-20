@@ -104,7 +104,7 @@ EQUD 0
 .disksys_copy_block_return
     RTS
 
-IF 0        \\ enable when we have PuCrunch
+IF 1        \\ enable when we have PuCrunch
 .disksys_decrunch_file
 {
     \ Final destination is baked into pu file

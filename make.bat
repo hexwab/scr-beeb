@@ -29,6 +29,16 @@ if %ERRORLEVEL% neq 0 (
         exit /b 1
 )
 
+bin\pucrunch.exe -5 -d -c0 -l0x1000 "build\Core" build\core.pu
+bin\pucrunch.exe -5 -d -c0 -l0x1000 "build\Data" build\data.pu
+bin\pucrunch.exe -5 -d -c0 -l0x1000 "build\Cart" build\cart.pu
+bin\pucrunch.exe -5 -d -c0 -l0x1000 "build\Beebgfx" build\beebgfx.pu
+bin\pucrunch.exe -5 -d -c0 -l0x1000 "build\Beebmus" build\beebmus.pu
+bin\pucrunch.exe -5 -d -c0 -l0x1000 "build\Hazel" build\hazel.pu
+bin\pucrunch.exe -5 -d -c0 -l0x1000 "build\Kernel" build\kernel.pu
+
+bin\pucrunch.exe -5 -d -c0 -l0x1000 "data\outruneu.vgc" build\outrun.pu
+
 %BEEBASM% -i scr-disc.asm -title "Stunt Car" -boot Loader -do scr-beeb.ssd -v
 
 %PYTHON% bin\crc32.py scr-beeb.ssd
