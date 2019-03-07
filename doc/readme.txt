@@ -1,6 +1,8 @@
+
 STUNT CAR RACER
-by Geoff Crammond
-with graphics by John Cumming
+---------------
+Original concept, design and
+programming by Geoff Crammond
 
 Originally published for C64
 by MicroStyle (c) 1989
@@ -11,23 +13,41 @@ the Bitshifters Collective!
 
 
 ABOUT
+-----
+Legendary video game developer Geoff
+Crammond created many seminal titles
+for the BBC Micro but it seemed a
+shame that one of his best-loved works
+never made it to the platform he began
+his career on... until now, some 30
+years after its original release! This
+is our thank you to Geoff for his
+inspiration and contributions to BBC
+Micro game history.
+
 This port was inspired by the work of
 Fandal who converted the original C64
-version of the game to the Atari XE
+version of the game to the Atari XE,
 starting only with a 6502 disassembly
 of the raw 64K memory map.
 
 From the same starting point we have
-painstakingly pieced together the
-functionality and memory map of the
-game so it could first be rearranged
-into BBC sideways RAM banks and then
-all graphics, sound and I/O routines
-replaced or augmented with brand new
-code specifically for the BBC Master.
+reverse engineered the functionality
+and data structures of the game so it
+could be rearranged into the  Master
+128K memory map. Next all graphics,
+sound and I/O routines were replaced
+or augmented with brand new code
+specifically for the BBC hardware.
+Finally, new artwork was drawn to
+accomodate palette limitations and
+music added to round off this brand
+new version of one our favourite games
+of all time.
 
 
 CONTROLS
+--------
 - Steer left = S
 - Steer right = D
 - Boost = Return
@@ -40,6 +60,7 @@ CONTROLS
 - Redefine keys = F1 (whilst paused)
 
 - Toggle menu music = M
+- Volume up/down = Keypad +/-
 
 To reset the game entirely hold 'F1'
 whilst selecting the 'Replay' option
@@ -47,13 +68,16 @@ from the File menu.
 
 
 HOW TO PLAY
+-----------
 See separate file 'GUIDE' on this disc
 *TYPE GUIDE to read
 
 
 CREDITS
+-------
 BBC Master port by Kieran Connell
 Additional programming by Tom Seddon
+Additional programming by HEx
 Music conversion & code by Simon Morris
 BBC graphics by John 'Dethmunk' Blythe
 
@@ -66,6 +90,7 @@ SN76489 sound chip by Simon Morris.
 
 
 CONTACT
+-------
 Visit our BBC Retro Coding webpage
 https://bitshifters.github.io
 
@@ -80,11 +105,11 @@ http://stardot.org.uk/forums/
 
 
 MANY THANKS
+-----------
 Geoff Crammond
-John Cumming
+John Cummins
 Matt Furniss
 Fandal & Irgendwer
-HEx
 Inverse Phase
 Matt Godbolt
 Richard 'Tricky' Broadhurst
@@ -99,16 +124,18 @@ Project 64 - David Holz, Cris Berneburg
 
 
 TOOLS USED
+----------
 BeebAsm, b-em emulator, b2 emulator
-jsbeeb emulator, pucrunch, Visual
+jsbeeb emulator, Exomizer 3, Visual
 Studio Code, GitHub & more...
 
 https://github.com/simondotm/ym2149f
 https://github.com/simondotm/vgm-packer
-https://github.com/mist64/pucrunch
+https://bitbucket.org/magli143/exomizer
 
 
 TECHNICAL SUPPORT
+-----------------
 This game requires a standard issue
 BBC Master 128K computer.
 
@@ -127,9 +154,6 @@ may have a ROM installed that is
 claiming precious RAM!  Try unplugging
 any non-essential ROMS with *UNPLUG.
 
-Co-processors and the Tube must be
-disabled. Type *CONF.NOTUBE and reset.
-
 This game has been tested on real
 floppy disc hardware, Retroclinic
 DataCentre and MAMMFS for MMC devices.
@@ -141,5 +165,6 @@ if possible.
 
 
 RELEASE NOTES
-1/3/2019 Version 1.0
+-------------
+8/3/2019 Version 1.0
 Initial release!
