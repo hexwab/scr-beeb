@@ -1,12 +1,13 @@
 PYTHON?=python
 BEEBASM?=beebasm
 EXO?=exomizer
-
+UEFWALK=/home/HEx/uefwalk-1.50/
 ##########################################################################
 ##########################################################################
 
 PNG2BBC_DEPS:=./bin/png2bbc.py ./bin/bbc.py
 EXO_AND_ARGS=$(EXO) level -c -M256
+EXO2=$(EXO) level
 
 ##########################################################################
 ##########################################################################
@@ -29,7 +30,21 @@ build:\
 	$(PYTHON) bin/hud_font.py > build/hud-font-tables.asm
 	$(PYTHON) bin/dash_icons.py > build/dash-icons.asm
 	$(PYTHON) bin/horizon_table.py
-	$(BEEBASM) -i scr-beeb.asm -do scr-beeb.ssd -title "Stunt Car" -opt 2 -v > compile.txt
+	$(BEEBASM) -i scr-beeb.asm  -title "Stunt Car" -v > compile.txt
+	$(EXO2) Title@0x3000 -o title.exo
+	$(EXO2) Loader2@0x4e00 -o loader2.exo
+	$(EXO2) Cart@0x8000 -o cart.exo
+	$(EXO2) Kernel@0x8000 -o kernel.exo
+	$(EXO2) Beebgfx@0x8000 -o beebgfx.exo
+	$(EXO2) Beebmus@0x8800 -o beebmus.exo
+	$(EXO2) Core@0x0e00 -o core.exo
+	$(EXO2) Hazel@0xcb00 -o hazel.exo
+	$(EXO2) Data@0x6000 -o data.exo
+	$(BEEBASM) -i tapeloader.s -v > compile2.txt
+	perl writeuef.pl >scr.uef
+	$(UEFWALK)/uefwalk --output=bitstream --quiet scr.uef \
+        | $(UEFWALK)/kleen/bitclean --text-input - \
+        | sox -t raw -c 1 -L -b 16 -e signed -r 44100 - -t wav scr.wav
 
 	cat compile.txt | grep -Evi '^\.' | grep -Evi '^    ' | grep -vi 'macro' | grep -vi 'saving file' | grep -vi 'safe to load to' | grep -Evi '^-+'
 

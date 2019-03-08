@@ -856,75 +856,32 @@ GUARD &6000
 ; Load ROMs first, as they use the space later required by $.Core.
 
 	SWR_SELECT_SLOT BEEB_CART_SLOT
-
-	LDX #LO(cart_filename)
-	LDY #HI(cart_filename)
-	LDA #HI(cart_start)
-	JSR disksys_load_file
+exo_load = $41e
+	JSR exo_load
 
 	SWR_SELECT_SLOT BEEB_KERNEL_SLOT
-
-	LDX #LO(kernel_filename)
-	LDY #HI(kernel_filename)
-	LDA #HI(kernel_start)
-	JSR disksys_load_file
-
+	JSR exo_load
 	SWR_SELECT_SLOT BEEB_GRAPHICS_SLOT
-	
-	ldx #lo(beeb_graphics_filename)
-	ldy #hi(beeb_graphics_filename)
-	lda #hi(beeb_graphics_start)
-	jsr disksys_load_file
-
+	JSR exo_load
 	SWR_SELECT_SLOT BEEB_MUSIC_SLOT
-	
-	ldx #lo(beeb_music_filename)
-	ldy #hi(beeb_music_filename)
-	lda #hi(beeb_music_start)
-	jsr disksys_load_file
-
-; Load $.Core.
-
-	LDX #LO(core_filename)
-	LDY #HI(core_filename)
-	LDA #HI(core_start)
-	JSR disksys_load_file
-
-	\\ HAZEL must be last as stomping on FS workspace
-
-	LDX #LO(hazel_filename)
-	LDY #HI(hazel_filename)
-	LDA #HI(hazel_load_addr)
-	JSR disksys_load_direct
-
+	JSR exo_load
+	JSR exo_load		; core
+	JSR exo_load		; hazel
 	\\ Load boot data to screen
-
-	LDX #LO(data_filename)
-	LDY #HI(data_filename)
-	LDA #HI(boot_data_start)
-	JSR disksys_load_file
-
+	JSR exo_load		; data
 	\\ Clear Hazel RAM for BSS
 
 	{
 		ldx #0
-		lda #0
 		.clear_loop
-		sta hazel_start, X
+		stz hazel_start, X
 		inx
 		bne clear_loop
 		inc clear_loop+2
 		ldy clear_loop+2
-		cpy #HI(hazel_end)
+		cpy #$cb ;HI(hazel_end)
 		bcc clear_loop
 	}
-
-	\\ Now copy data from screen1 up to Hazel
-
-	LDA #HI(hazel_load_addr)
-	LDX #HI(hazel_data_start)
-	LDY #HI(hazel_data_end - hazel_data_start + &FF)
-	JSR disksys_copy_block
 
 	\\ FS is now unusable as HAZEL has been trashed
 

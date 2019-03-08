@@ -1872,7 +1872,7 @@ ldx #lo(beeb_mode7_crtc_regs)
 ldy #hi(beeb_mode7_crtc_regs)
 jsr beeb_set_crtc_regs
 
-lda #ULA_MODE_7:sta $fe20
+lda #ULA_MODE_7:sta $fe20:sta $248
 
 ; disabled output + interlace sync/video
 lda #8:sta $fe00:lda #%11110011:sta $fe01
