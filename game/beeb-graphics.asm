@@ -26,15 +26,6 @@ incbin "build/scr-beeb-preview.exo"
 .track_preview_bg
 incbin "build/scr-beeb-preview-bg.exo"
 
-.credits_screen
-incbin "build/scr-beeb-credits.exo"
-
-.keys_screen_pu
-incbin "build/keys.mode7.exo"
-
-.trainer_screen_pu
-incbin "build/trainer.mode7.exo"
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -162,40 +153,6 @@ equw flames_masked_masks_0
 equw flames_masked_masks_1
 equw flames_masked_masks_2
 }
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-._graphics_unpack_menu_screen
-{
-;    LDA #HI(screen1_address)
-    LDX #LO(beeb_menu_screen_compressed)
-    LDY #HI(beeb_menu_screen_compressed)
-    JMP PUCRUNCH_UNPACK
-}
-
-.beeb_menu_screen_compressed
-INCBIN "build/scr-beeb-menu.exo"
-
-IF 0
-._graphics_copy_menu_header_graphic
-{
-
-if (menu_header_graphic_end-menu_header_graphic_begin) mod 256<>0
-error "oops"
-endif
-
-ldx #0
-.loop
-for i,0,(menu_header_graphic_end-menu_header_graphic_begin) div 256-1
-lda menu_header_graphic_begin+i*256,x:sta $4000+i*256,x
-next
-
-inx
-bne loop
-
-rts
-}
-ENDIF
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1691,6 +1648,40 @@ rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+._graphics_unpack_menu_screen
+{
+;    LDA #HI(screen1_address)
+    LDX #LO(beeb_menu_screen_compressed)
+    LDY #HI(beeb_menu_screen_compressed)
+    JMP PUCRUNCH_UNPACK
+}
+
+.beeb_menu_screen_compressed
+INCBIN "build/scr-beeb-menu.exo"
+
+IF 0
+._graphics_copy_menu_header_graphic
+{
+
+if (menu_header_graphic_end-menu_header_graphic_begin) mod 256<>0
+error "oops"
+endif
+
+ldx #0
+.loop
+for i,0,(menu_header_graphic_end-menu_header_graphic_begin) div 256-1
+lda menu_header_graphic_begin+i*256,x:sta $4000+i*256,x
+next
+
+inx
+bne loop
+
+rts
+}
+ENDIF
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ._ensure_screen_enabled
 {
@@ -1713,6 +1704,16 @@ rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+.graphics_early_start
+
+.credits_screen
+incbin "build/scr-beeb-credits.exo"
+.keys_screen_pu
+incbin "build/keys.mode7.exo"
+
+.trainer_screen_pu
+incbin "build/trainer.mode7.exo"
 
 ._beeb_set_mode_1
 {
@@ -1882,21 +1883,6 @@ lda $fe34:ora #%00000100:sta $fe34 ; page in shadow RAM
 ldx #lo(keys_screen_pu):ldy #hi(keys_screen_pu)
 jsr PUCRUNCH_UNPACK
 lda $fe34:and #%11111011:sta $fe34 ; page in main RAM
-; stash screen RAM
-{
-ldy #0
-.stashloop
-lda &7C00,Y
-sta &4000,Y
-lda &7D00,Y
-sta &4100,Y
-lda &7E00,Y
-sta &4200,Y
-lda &7F00,Y
-sta &4300,Y
-iny
-bne stashloop
-}
 ldx #lo(trainer_screen_pu):ldy #hi(trainer_screen_pu)
 jsr PUCRUNCH_UNPACK
 
@@ -1923,22 +1909,6 @@ lda #19:jsr osbyte
 
 ; disable screen
 lda #8:sta $fe00:lda #$30:sta $fe01
-
-; unstash screen RAM
-{
-ldy #0
-.unstashloop	
-lda &4000,Y
-sta &7C00,Y
-lda &4100,Y
-sta &7D00,Y
-lda &4200,Y
-sta &7E00,Y
-lda &4300,Y
-sta &7F00,Y
-iny
-bne unstashloop
-}
 rts
 
 ; Keys screen loop.
@@ -1956,15 +1926,19 @@ and #$df
 beq keys_done
 cmp #'C':beq trainer_screen
 bra keys_loop
-}
 .keys_done
+lda partno
+cmp #8
+bne keys_loop
 .trainer_done
+lda partno
+cmp #8
+bne trainer_screen_loop
 rts
 
 ; Trainer screen loop.
 
 .trainer_screen
-{
 lda #19:jsr osbyte
 lda &FE34:and #&FE:sta &FE34 ; display main RAM
 
@@ -2048,6 +2022,7 @@ jmp osbyte
 	EQUB $00				; R13 screen start address, low
 }
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2112,3 +2087,5 @@ rts
 .sound_volume_debounce:equb 0
 
 .beeb_graphics_end
+SAVE "gfxlate",beeb_graphics_start,graphics_early_start
+SAVE "gfxearly",graphics_early_start,beeb_graphics_end

@@ -45,7 +45,11 @@ disksys_loadto_addr = $0e00
 hazel_load_addr=$4000
 
 ; Where loader2 should live.
-loader2_addr=$4e00
+loader2_addr=$900
+
+partno = $510
+irqinit = $511
+timeleft = $5c9
 
 MAX_LOADABLE_ROM_SIZE = $8000 - disksys_loadto_addr
 
@@ -818,7 +822,8 @@ GUARD &6000
 .scr_entry
 {
 	; BEEB EARLY INIT
-
+	LDX #$FF
+	TXS
 	LDA #200
 	LDX #2
 	JSR osbyte
@@ -854,21 +859,43 @@ GUARD &6000
     LDA &FE34:ORA #&8:STA &FE34
 
 ; Load ROMs first, as they use the space later required by $.Core.
+	exo_load = $41e
 
-	SWR_SELECT_SLOT BEEB_CART_SLOT
-exo_load = $41e
-	JSR exo_load
-
-	SWR_SELECT_SLOT BEEB_KERNEL_SLOT
-	JSR exo_load
 	SWR_SELECT_SLOT BEEB_GRAPHICS_SLOT
-	JSR exo_load
-	SWR_SELECT_SLOT BEEB_MUSIC_SLOT
-	JSR exo_load
-	JSR exo_load		; core
-	JSR exo_load		; hazel
-	\\ Load boot data to screen
-	JSR exo_load		; data
+	;JSR exo_load		; gfxearly
+
+	;JSR exo_load		; core
+
+	;; init IRQ loader
+{
+	LDY #irqdecr_end-irqdecr_start
+.copyloop
+	LDA irqdecr_start-1,Y
+	STA partno-1,Y
+	DEY
+	BNE copyloop
+}
+	
+	JSR irqinit
+.wait_for_part
+	SEI
+	lda $fe34:ora #%00000100:sta $fe34 ; page in shadow RAM
+	LDA timeleft
+	ORA #48
+	STA $7C24
+	LDA timeleft+1
+	ORA #48
+	STA $7C23
+	LDA #':'
+	STA $7C22
+	LDA timeleft+2
+	ORA #48
+	STA $7C21
+	lda $fe34:and #%11111011:sta $fe34 ; page in main RAM
+	cli
+	LDA #2
+	CMP partno
+	BNE wait_for_part
 	\\ Clear Hazel RAM for BSS
 
 	{
@@ -1099,7 +1126,7 @@ endif
 	ENDIF
 
 	\\ Clear lower RAM
-
+IF 0
 	{
 		ldx #0
 		lda #0
@@ -1112,7 +1139,7 @@ endif
 		cpy #&0D
 		bcc clear_loop
 	}
-
+ENDIF
 	; Sort out display.
 	jsr set_up_beeb_display
 	
@@ -1218,7 +1245,7 @@ IF 0
 }
 .copy_to_shadow_end
 ENDIF
-
+IF 0
 .core_filename EQUS "Core", 13
 .kernel_filename EQUS "Kernel", 13
 .cart_filename EQUS "Cart", 13
@@ -1226,9 +1253,11 @@ ENDIF
 .beeb_music_filename EQUS "Beebmus",13
 .hazel_filename EQUS "Hazel", 13
 .data_filename EQUS "Data", 13
-
-INCLUDE "lib/disksys.asm"
-
+ENDIF
+;INCLUDE "lib/disksys.asm"
+.irqdecr_start
+INCBIN "irqdecr"
+.irqdecr_end
 .boot_end
 
 ; *****************************************************************************
@@ -1405,7 +1434,7 @@ PRINT "--------"
 ; Manual guard, as hazel_end and hazel_start are forward references
 ; above.
 IF hazel_load_addr+(hazel_data_end-hazel_data_start)>loader2_addr
-ERROR "Hazel data too large"
+;ERROR "Hazel data too large"
 ENDIF
 
 ; *****************************************************************************

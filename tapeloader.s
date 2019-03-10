@@ -1,26 +1,8 @@
 CPU 1
-org $500
-.start	
-.basic
-	equb 13,0,0,$07,$d6,$b8,$50,13,255
-.reloc	
-	sec
-	ror $ff
-	lda #126
-	jsr $fff4
-	ldy #0
-	sty $b9
-	tsx
-	lda $100,X
-	sta $ba
-.relocloop
-	lda ($b9),Y
-	sta start,Y
-	iny
-	bne relocloop
-	jmp main
+org $506
+.start
 .main
-	ldx #$ff:jsr next_osbyte		; 0: query machine type
+	lda #0:ldx #$ff:jsr osbyte		; 0: query machine type
 	; anywhere from 3 to 5 is OK
 	cpx #3:bcc type_not_ok                          ; Master 128
 	beq hint
@@ -31,19 +13,16 @@ org $500
 .type_not_ok
 	brk:equs 0,"BBC Master required!",0
 .type_ok
-	jsr osbyte_zerox;68
+	lda #68:jsr osbyte_zerox
 	txa:ora #&f0:inc a:beq swram_ok
 .noswram brk:equs 0,"Need sideways RAM in banks 4-7."
-.lk_hint equs 13,10,"(Set LK18 and LK19 west?)"
-.osbytes
-        equb 0,68,234,108,108
+.lk_hint equs 13,10,"(Set LK18 and LK19 west?)",0
 .swram_ok
-	jsr osbyte_zerox ;234
-	ldx #1:jsr next_osbyte		; 108: page in shadow RAM
-	lda #22:jsr &FFCB:lda #130:jsr &FFCB
-	lda #10
-        sta $fe00
-        sta $fe01
+	sec: ror $ff:lda #126:jsr osbyte
+	lda #234:jsr osbyte_zerox ;234
+	lda #108:ldx #1:jsr osbyte		; 108: page in shadow RAM
+	lda #22:jsr &FFCB:lda #135:jsr &FFCB
+	lda #8:sta $fe00:lda #%11110011:sta $fe01
 	;; tape on
 	LDA #&85:STA &FE10
 	LDA #&D5:STA &FE08
@@ -61,9 +40,11 @@ org $500
 	dey
 	bne loadinitial
 	jsr decrunch
-	jsr osbyte_zerox       ; 108: page in main RAM
+	;lda #8:sta $fe00
+	:lda #%11010011:sta $fe01
+	lda #108:jsr osbyte_zerox       ; 108: page in main RAM
 	jsr decrunch
-	jmp &4E00
+	jmp &0900
 .get_crunched_byte
 	PHP
 .no
@@ -75,14 +56,12 @@ org $500
 	RTS
 .osbyte_zerox
 	ldx #0
-.next_osbyte
-	lda osbytes
-	inc next_osbyte+1
+.osbyte
 	jmp ($20A)
 	
 ;.tabl_bit
 ;        equb %11100001, %10001100, %11100010
 .end
-save "boottape",start,end
 include "exodecr.s"
-	
+save "boottape",$500,end
+;include "irqloader.asm"
