@@ -30,12 +30,15 @@ build:\
 	$(PYTHON) bin/hud_font.py > build/hud-font-tables.asm
 	$(PYTHON) bin/dash_icons.py > build/dash-icons.asm
 	$(PYTHON) bin/horizon_table.py
+	$(BEEBASM) -i irqloader.asm -v > irq.txt
 	$(BEEBASM) -i scr-beeb.asm  -title "Stunt Car" -v > compile.txt
 	$(EXO2) Title@0x3000 -o title.exo
-	$(EXO2) Loader2@0x4e00 -o loader2.exo
+	$(EXO2) Loader2@0x900 -o loader2.exo
 	$(EXO2) Cart@0x8000 -o cart.exo
 	$(EXO2) Kernel@0x8000 -o kernel.exo
 	$(EXO2) Beebgfx@0x8000 -o beebgfx.exo
+	$(EXO2) gfxearly@0xa871 -o gfxearly.exo
+	$(EXO2) gfxlate@0x8000 -o gfxlate.exo
 	$(EXO2) Beebmus@0x8800 -o beebmus.exo
 	$(EXO2) Core@0x0e00 -o core.exo
 	$(EXO2) Hazel@0xcb00 -o hazel.exo
