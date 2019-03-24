@@ -66,7 +66,7 @@ ENDIF
 
 DEFAULT_TRACK_DRAW_DISTANCE = $02		; $06 for longer draw
 
-DEFAULT_SOUND_VOLUME = 12		; 0=silent, 15=loudest
+DEFAULT_SOUND_VOLUME = 7		; 0=silent, 10=loudest
 
 BEEB_SCREEN_MODE = 4
 BEEB_KERNEL_SLOT = 4
@@ -641,6 +641,8 @@ L_0300	= $0300 + BEEB_LOWER_OFFSET
 L_0314	= $0314 + BEEB_LOWER_OFFSET
 L_0380	= $0380 + BEEB_LOWER_OFFSET
 
+L_8000 = $0400 + BEEB_LOWER_OFFSET ;save game
+
 ; Some sort of track variables?
 ; MAX ROAD SECTIONS = $4E = 78
 
@@ -1098,10 +1100,8 @@ GUARD &6000
 	SWR_SELECT_SLOT BEEB_MUSIC_SLOT
 
     ; initialize the vgm player with a vgc data stream
-    lda #hi(vgm_stream_buffers)
     ldx #lo(vgm_data_intro)
     ldy #hi(vgm_data_intro)
-    sec
     jsr vgm_init
 
 	\\ Turns out the game has a dependency on running with Kernel as default bank

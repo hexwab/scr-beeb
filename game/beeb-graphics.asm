@@ -2067,37 +2067,28 @@ jmp osbyte
 
 ._graphics_update_sound_volume
 	{
-	rts;FIXME
-	ldx #18
-	lda sound_volume
-	ora #$10
+	lda sound_volume ; 0 to 10
+	beq silent
+	eor #31
 	tay
+	ldx #18
 .loop
-	tya
-	bmi less_than_zero
-	cmp #$10
-	bcs overflow
-.less_than_zero
-	lda #0
-	equb $2c
-.overflow
-	lda #15
+	lda master_volume_table-3,y
 	sta sn_volume_table,x
+	dey
 	dex
 	bpl loop
 	rts
-IF 0	
-ldx sound_volume:inx:stx add+1
-lda #0:ldx #15
-.loop
-pha
-lsr a:lsr a:lsr a:lsr a:eor #$0f:sta sn_volume_table,x
-pla
-clc
-.add:adc #$ff
-dex:bpl loop
-rts
-ENDIF
+.silent
+	lda #15
+	ldx #18
+.loop2
+	sta sn_volume_table,x
+	dex
+	bpl loop2
+	rts
+	.master_volume_table
+	equb 0,0,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,15,15,15,15,15,15,15,15,15
 }
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2128,7 +2119,7 @@ jmp volume_changed
 .increase
 ldx sound_volume
 inx
-cpx #16
+cpx #10
 beq done
 .volume_changed
 lda sound_volume_debounce

@@ -63,7 +63,7 @@ s2writeval=*+1
 	beq irq_silent
 	ora #$0f
 .irq_silent
-	sta $fe41
+	sta $fe4f
 	stz $fe40
 	lda flip
 	eor #$20
@@ -116,7 +116,7 @@ u2writeval=*+1
 	beq irq_silent
 	ora #$0f
 .irq_silent
-	sta $fe41
+	sta $fe4f
 	stz $fe40
 	lda flip
 	eor #$20
@@ -171,7 +171,7 @@ u1writeval=*+1
 	beq irq_silent
 	ora #$0f
 .irq_silent
-	sta $fe41
+	sta $fe4f
 	stz $fe40
 	lda flip
 	eor #$20
@@ -572,12 +572,14 @@ SID_MSB_SHIFT = 3
 ; Write data to SN76489 sound chip
 ; A contains data to be written to sound chip
 ; clobbers X, A is non-zero on exit
-.sn_write_maybe_attenuate
+
+;; no need to call this, call one of the more specific functions below!
+.sn_write
 {
 	tax
-	bpl sn_write					; taken if latch byte
+	bpl sn_write_real  ; taken if latch byte
 	bit #$10 ; sn_attenuation_register_mask
-	beq sn_write					; taken if not attenuation register
+	beq sn_write_real  ; taken if not attenuation register
 .*sn_write_with_attenuation
         tax
         and #$f0         ; %xrrr0000
@@ -587,12 +589,12 @@ SID_MSB_SHIFT = 3
         tax
         lda sn_volume_table+3,x
 	.remask:ora #$ff
-.*sn_write
+.*sn_write_real
     php
     sei
     ldx #255
     stx &fe43
-    sta &fe41
+    sta &fe4f
     stz &fe40
     nop:nop:nop
     lda #8
@@ -604,15 +606,6 @@ SID_MSB_SHIFT = 3
 .sn_volume_table:EQUB 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,15,15,15
 
 ; Reset SN76489 sound chip to a default (silent) state
-.sn_reset
-{
-	\\ Zero volume on all channels
-	lda #&9f : jsr sn_write
-	lda #&bf : jsr sn_write
-	lda #&df : jsr sn_write
-	lda #&ff : jmp sn_write
-}
-
 
 .irq_audio_pause
 EQUB 0
@@ -820,14 +813,29 @@ EQUB 0
 {
     LDA beeb_music_state
     STA beeb_music_playing
+    BEQ nomusic
+    LDA $F4
+    PHA
+    SWR_SELECT_SLOT BEEB_MUSIC_SLOT
+    JSR vgm_unpause
+    PLA
+    STA $F4
+    STA $FE30
+.nomusic
     RTS
 }
 
 .beeb_music_stop
 {
-    LDA #0
-    STA beeb_music_playing
-    JMP sn_reset
+    STZ beeb_music_playing
+    LDA $F4
+    PHA
+    SWR_SELECT_SLOT BEEB_MUSIC_SLOT
+    JSR vgm_pause
+    PLA
+    STA $F4
+    STA $FE30
+    RTS
 }
 
 .beeb_music_toggle

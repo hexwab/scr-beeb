@@ -57,48 +57,25 @@ zp_block_size = zp_temp+0 ; does not need to be zp
 ;--------------------------------------------------
 
 ; Sound chip data from the vgm player
-IF ENABLE_VGM_FX
+IF 1;ENABLE_VGM_FX
 .vgm_fx SKIP 11
 ; first 8 bytes are:
 ; tone0 LO, tone1 LO, tone2 LO, tone3, vol0, vol1, vol2, vol3 (all 4-bit values)
 ; next 3 bytes are:
 ; tone0 HI, tone1 HI, tone2 HI (all 6-bit values)
-VGM_FX_TONE0_LO = 0
-VGM_FX_TONE1_LO = 1
-VGM_FX_TONE2_LO = 2
-VGM_FX_TONE3_LO = 3 ; noise
-VGM_FX_VOL0     = 4
-VGM_FX_VOL1     = 5
-VGM_FX_VOL2     = 6
-VGM_FX_VOL3     = 7 ; noise
-VGM_FX_TONE0_HI = 8
-VGM_FX_TONE1_HI = 9
-VGM_FX_TONE2_HI = 10
+VGM_FX_TONE0_LO = vgm_fx+0
+VGM_FX_TONE1_LO = vgm_fx+1
+VGM_FX_TONE2_LO = vgm_fx+2
+VGM_FX_TONE3_LO = vgm_fx+3 ; noise
+VGM_FX_VOL0     = vgm_fx+4
+VGM_FX_VOL1     = vgm_fx+5
+VGM_FX_VOL2     = vgm_fx+6
+VGM_FX_VOL3     = vgm_fx+7 ; noise
+VGM_FX_TONE0_HI = vgm_fx+8
+VGM_FX_TONE1_HI = vgm_fx+9
+VGM_FX_TONE2_HI = vgm_fx+10
 
 ENDIF
-
-;-------------------------------------------
-; vgm_init
-;-------------------------------------------
-; Initialise playback routine
-;  A points to HI byte of a page aligned 2Kb RAM buffer address
-;  X/Y point to the VGC data stream to be played
-;  C=1 for looped playback
-;-------------------------------------------
-.vgm_init
-{
-    ; stash the 2kb buffer address
-    sta vgm_buffers
-    lda #0
-    ror a  ; move carry into A
-    sta vgm_loop
- 
-    ; stash the data source addr for looping
-    stx vgm_source+0
-    sty vgm_source+1
-    ; Prepare the data for streaming (passed in X/Y)
-    jmp vgm_stream_mount
-}
 
 ;-------------------------------------------
 ; vgm_update
@@ -124,10 +101,12 @@ ENDIF
     beq finished
     cmp #$ef       ; check if it's a tone3 skip command (&ef) before we play it
     beq no_tone3 ; - this prevents the LFSR being reset unnecessarily
-    jsr sn_write
+    sta VGM_FX_TONE3_LO
+    jsr sn_write_real
 .no_tone3
     lda#7:jsr vgm_update_register1  ; Volume3
     bcc no_vol3
+    sta VGM_FX_VOL3
     jsr sn_write_with_attenuation
 .no_vol3
     lda#0:jsr vgm_update_register2  ; Tone0
@@ -145,26 +124,17 @@ ENDIF
     jsr do_tone2
     ;jsr do_normal_tone
 .no_tone2
-    lda#4:jsr vgm_update_register1  ; Volume0
+    lda#4:jsr vgm_update_volume_register  ; Volume0
     bcc no_vol0
     sta u1writeval ;tone0_writeval
-    bit bass_flag+0
-    bmi no_vol0
-    jsr sn_write_with_attenuation
 .no_vol0
-    lda#5:jsr vgm_update_register1  ; Volume1
+    lda#5:jsr vgm_update_volume_register  ; Volume1
     bcc no_vol1
     sta u2writeval ;tone1_writeval
-    bit bass_flag+1
-    bmi no_vol1
-    jsr sn_write_with_attenuation
 .no_vol1
-    lda#6:jsr vgm_update_register1  ; Volume2
+    lda#6:jsr vgm_update_volume_register  ; Volume2
     bcc no_vol2
     sta s2writeval ;tone2_writeval
-    bit bass_flag+2
-    bmi no_vol2
-    jsr sn_write_with_attenuation
 .no_vol2
     lda #0 ; X is no longer zero after sn_write
 .exit
@@ -172,21 +142,12 @@ ENDIF
 
 .finished
     ; end of tune reached
-    lda vgm_loop
-    beq no_looping
-    ; restart if looping
     \\ SCR ONLY HACK LOOP ADDRESS
     ldx #LO(vgm_data_loop);vgm_source+0
     ldy #HI(vgm_data_loop);vgm_source+1
-    lda vgm_loop
-    asl a ; -> C
     lda vgm_buffers
     jsr vgm_init
-    jmp vgm_update
-.no_looping 
-    ; no looping so set flag & stop PSG
-    sty vgm_finished    ; any NZ value is fine, in this case 0x08
-    jmp sn_reset ; also returns non-zero in A
+    bra vgm_update
 }
 
 
@@ -209,14 +170,14 @@ VGM_STREAMS = 8
     ; 8 zp_huff_bitbuffer ; 1 byte, referenced by inner loop
     ; 9 huff_bitsleft     ; 1 byte, referenced by inner loop
 
-.vgm_buffers  equb 0    ; the HI byte of the address where the buffers are stored
+.vgm_buffers  equb hi(vgm_stream_buffers)   ; the HI byte of the address where the buffers are stored
 .vgm_finished equb 0    ; a flag to indicate player has reached the end of the vgm stream
 .vgm_flags  equb 0      ; flags for current vgm file. bit7 set stream is huffman coded. bit 6 set if stream is 16-bit LZ4 offsets
 .vgm_temp equb 0        ; used by vgm_update_register1()
 .vgm_loop equb 0        ; non zero if tune is to be looped
-.vgm_source equw 0      ; vgm data address
+.vgm_source equw vgm_data_intro  ; vgm data address
 .firstbyte equb 0
-
+.vgm_paused equb 0
 ; 8 counters for VGM register update counters (RLE)
 .vgm_register_counts
     SKIP 8
@@ -267,6 +228,7 @@ VGM_STREAMS = 8
 
 ; VGC file parsing - Initialise the system for the provided in-memory VGC data stream.
 ; On entry X/Y point to Lo/Hi address of the vgc data
+.vgm_init
 .vgm_stream_mount
 {
     ; parse data stream
@@ -542,6 +504,39 @@ ENDIF
     rts
 }
 
+.vgm_update_volume_register
+; same as vgm_update_register1 but does attenuation
+; returns bitbang volume in A, C set if needed
+{
+	jsr vgm_update_register1
+	bcc skip_register_update
+	sta VGM_FX_VOL0-4,X
+	bit bass_flag-4,X
+	bmi do_bass_volume
+	jsr sn_write_with_attenuation
+	clc
+	rts
+.*do_bass_volume
+	tax
+	and #$f0
+	sta remask+1
+	txa
+	and #$0f
+	tax
+	lda sn_volume_table,X
+.remask ora #$00
+	sec
+	rts
+}
+
+; A is pitch register: $81, $a1, $c1
+.set_bitbang_pitch
+{
+    jsr sn_write_real
+    lda #$00
+    jmp sn_write_real
+}
+
 ; Fetch 2 register bytes (LATCH+DATA) from the encoded stream and send to sound chip (tone0, tone1, tone2)
 ; Same parameters as vgm_update_register1
 .vgm_update_register2
@@ -549,19 +544,13 @@ ENDIF
     jsr vgm_update_register1    ; returns stream in X if updated, and C=0 if no update needed
     bcc skip_register_update
     sta firstbyte
+    sta VGM_FX_TONE0_LO,X
     ; decode 2nd byte and return with it
     txa
     jsr vgm_get_register_data
+    sta VGM_FX_TONE0_HI,X
     sec
     rts
-}
-
-; A is pitch register: $81, $a1, $c1
-.set_bitbang_pitch
-{
-    jsr sn_write
-    lda #$00
-    jmp sn_write
 }
 
 ; in: A has second byte. out: A has timer lo, Y has timer hi
@@ -576,6 +565,9 @@ ENDIF
     asl a
     asl a
     ora #$06
+}
+.alreadyon
+{
     rts
 }
 
@@ -593,7 +585,7 @@ ENDIF
     sta $fe6e
     sta $fe6d ; clear
     stz bass_flag+0
-    lda u1writeval ; restore vol
+    lda VGM_FX_VOL0 ; restore vol
     jsr sn_write_with_attenuation
     pla
     bra do_normal_tone
@@ -610,8 +602,6 @@ ENDIF
     sta bass_flag+0 ; has top bit set
     lda #$81 ; set period to 1
     jmp set_bitbang_pitch
-.alreadyon
-    rts
 }
 
 ; in: A has second byte
@@ -619,9 +609,9 @@ ENDIF
 {
     tay
     lda firstbyte
-    jsr sn_write
+    jsr sn_write_real
     tya
-    jmp sn_write
+    jmp sn_write_real
 }
 
 ;in: A has second byte
@@ -638,7 +628,7 @@ ENDIF
     sta $fe6e
     lda $fe68 ; clear
     stz bass_flag+1
-    lda u2writeval ; restore vol
+    lda VGM_FX_VOL1 ; restore vol
     jsr sn_write_with_attenuation
     pla
     bra do_normal_tone
@@ -676,7 +666,7 @@ ENDIF
     sta $fe4e
     lda $fe48 ; clear
     stz bass_flag+2
-    lda s2writeval ; restore vol
+    lda VGM_FX_VOL2 ; restore vol
     jsr sn_write_with_attenuation
     pla
     bra do_normal_tone
@@ -699,6 +689,77 @@ ENDIF
 .alreadyon
     rts
 }
+
+.vgm_pause
+{
+	lda #$60
+	sta $fe6e ;uservia timer1,2 off
+	lda #$20
+	sta $fe4e ;sysvia timer2 off
+	sec
+	ror vgm_paused
+}
+.sn_reset
+{
+	\\ Zero volume on all channels
+	lda #&9f : jsr sn_write_real
+	lda #&bf : jsr sn_write_real
+	lda #&df : jsr sn_write_real
+	lda #&ff : jmp sn_write_real
+}
+
+; this is all terrible
+.vgm_unpause
+{
+	bit vgm_paused
+	bmi restore
+	rts
+.restore
+	php
+	sei
+	stz vgm_paused
+	stz bass_flag+0
+	stz bass_flag+1
+	stz bass_flag+2
+
+	lda VGM_FX_TONE0_HI
+	sta firstbyte
+	lda VGM_FX_TONE0_LO
+	jsr do_tone0
+	lda VGM_FX_TONE1_HI
+	sta firstbyte
+	lda VGM_FX_TONE1_LO
+	jsr do_tone1
+	lda VGM_FX_TONE2_HI
+	sta firstbyte
+	lda VGM_FX_TONE2_LO
+	jsr do_tone2
+	ldx #6
+.loop
+	lda ptrlo-4,X
+	sta wr+1
+	lda ptrhi-4,X
+	sta wr+2
+	lda vgm_fx,X
+	phx
+	jsr vgm_update_volume_register+5
+	bcc skip
+.wr	sta $eeee
+.skip
+	plx
+	dex
+	cpx #3
+	bne loop
+	lda VGM_FX_VOL3
+	jsr sn_write_with_attenuation
+	lda VGM_FX_TONE3_LO
+	plp
+	jmp sn_write_real
+.ptrlo	equb LO(u1writeval), LO(u2writeval), LO(s2writeval)
+.ptrhi	equb HI(u1writeval), HI(u2writeval), HI(s2writeval)
+}
+
+
 .vgm_end
 
 
