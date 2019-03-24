@@ -29,14 +29,168 @@ CRTC_R8_DisplayDisableValue=CRTC_R8_DisplayEnableValue OR %00110000
 
 CPU 1
 
+IRQ_RASTERS=0
+IRQ_DEBUG=0
+
+.sysvia_timer2
+IF IRQ_RASTERS
+    lda #&05:sta&fe21
+ENDIF
+IF IRQ_DEBUG
+{
+	bit bass_flag+2
+	bmi ok
+	brk
+.ok
+}
+ENDIF
+s2latchlo=*+1
+	lda #0
+	;adc $fe48
+	sta $fe48
+s2latchhi=*+1
+	lda #0
+	;bcs nosub
+	;dec a
+;.nosub
+	sta $fe49
+	lda #255
+	sta $fe43
+s2writeval=*+1
+	lda #$df
+{
+.flip
+	beq irq_silent
+	ora #$0f
+.irq_silent
+	sta $fe41
+	stz $fe40
+	lda flip
+	eor #$20
+	sta flip
+	lda #8
+	sta $fe40
+IF IRQ_RASTERS
+    lda #&07:sta&fe21
+ENDIF
+	lda $fc
+	rti
+}
+.uservia
+	and $fe6e
+	bit #$40
+	bne uservia_timer1
+IF IRQ_DEBUG
+	bit #$20
+	bne uservia_timer2
+	brk
+ENDIF
+.uservia_timer2
+IF IRQ_RASTERS
+    lda #&06:sta&fe21
+ENDIF
+IF IRQ_DEBUG
+{
+	bit bass_flag+1
+	bmi ok
+	brk
+.ok
+}
+ENDIF
+u2latchlo=*+1
+	lda #0
+	;adc $fe68
+	sta $fe68
+u2latchhi=*+1
+	lda #0
+	;bcs nosub
+	;dec a
+;.nosub
+	sta $fe69
+	lda #255
+	sta $fe43
+u2writeval=*+1
+	lda #0
+{
+.flip
+	beq irq_silent
+	ora #$0f
+.irq_silent
+	sta $fe41
+	stz $fe40
+	lda flip
+	eor #$20
+	sta flip
+	lda #8
+	sta $fe40
+IF IRQ_RASTERS
+    lda #&07:sta&fe21
+ENDIF
+	lda $fc
+	rti
+}
+
 .irq_handler
 {
-	LDA &FE4D
+	lda $fe6d
+	bmi uservia
+.not_uservia
+	lda $fe4d
+	bpl not_sysvia
+	and $fe4e
+	bit #$02
+	bne irq_vsync
+	bit #$40
+	bne irq_timer1
+	bit #$20
+	bne sysvia_timer2
+	
+.not_sysvia
+	brk
+}
+
+.uservia_timer1
+IF IRQ_RASTERS
+    lda #&02:sta&fe21
+ENDIF
+IF IRQ_DEBUG
+{
+	bit bass_flag+0
+	bmi ok
+	brk
+	.ok
+}
+ENDIF
+	lda $fe64 ;clear
+	lda #255
+	sta $fe43
+u1writeval=*+1
+{
+	lda #$9f
+.flip
+	beq irq_silent
+	ora #$0f
+.irq_silent
+	sta $fe41
+	stz $fe40
+	lda flip
+	eor #$20
+	sta flip
+	lda #8
+	sta $fe40
+IF IRQ_RASTERS
+    lda #&07:sta&fe21
+ENDIF
+	lda $fc
+	rti
+}
+
+{ LDA &FE4D
     AND #2
     BEQ irq_timer1
 
     \\ Otherwise vsync
-    .irq_vsync
+    .*irq_vsync
     STA &FE4D
 {
     LDA game_control_state
@@ -72,7 +226,7 @@ CPU 1
     LDA &FC
     RTI
 
-    .irq_timer1
+    .*irq_timer1
     LDA #&40
     STA &FE4D
 
@@ -415,41 +569,39 @@ SID_MSB_SHIFT = 3
 ; Sound chip routines
 ;-------------------------------------------
 
-
-
 ; Write data to SN76489 sound chip
 ; A contains data to be written to sound chip
 ; clobbers X, A is non-zero on exit
-.sn_write
+.sn_write_maybe_attenuate
 {
 	tax
-	bpl write					; taken if latch byte
-	bit sn_attenuation_register_mask
-	beq write					; taken if not attenuation register
-
-	and #$f0					; %xrrr0000
-	sta remask+1
-	txa							; %xrrrvvvv
-	and #$0f					; %0000vvvv
-	tax
- 	lda sn_volume_table,x
-.remask:ora #$ff
-
-.write
+	bpl sn_write					; taken if latch byte
+	bit #$10 ; sn_attenuation_register_mask
+	beq sn_write					; taken if not attenuation register
+.*sn_write_with_attenuation
+        tax
+        and #$f0         ; %xrrr0000
+        sta remask+1
+        txa              ; %xrrrvvvv
+        and #$0f         ; %0000vvvv
+        tax
+        lda sn_volume_table+3,x
+	.remask:ora #$ff
+.*sn_write
+    php
+    sei
     ldx #255
     stx &fe43
-    sta &fe4f
-    inx
-    stx &fe40
-    lda &fe40
-    ora #8
+    sta &fe41
+    stz &fe40
+    nop:nop:nop
+    lda #8
     sta &fe40
-    rts ; 21 bytes
-
-.sn_attenuation_register_mask:equb $10
+    plp
+    rts
 }
 
-.sn_volume_table:equb 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+.sn_volume_table:EQUB 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,15,15,15
 
 ; Reset SN76489 sound chip to a default (silent) state
 .sn_reset

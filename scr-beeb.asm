@@ -1112,9 +1112,16 @@ GUARD &6000
     SEI
 	LDA #&7F		; A=01111111
 	STA &FE4E		; R14=Interrupt Enable (disable all interrupts)
+	STA &FE6E		; R14=Interrupt Enable (disable all interrupts)
 
 	LDA #0			; A=00000000
 	STA &FE4B		; R11=Auxillary Control Register (timer 1 one shot mode)
+	LDA #$40			; A=00000000
+	STA &FE6B		; R11=Auxillary Control Register (timer 1 one shot mode)
+
+	lda #1
+	sta $fe64
+        sta $fe65
 
 	LDA #&C2		; A=11000010
 	STA &FE4E		; R14=Interrupt Enable (enable main_vsync and timer interrupt)

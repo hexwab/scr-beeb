@@ -20,8 +20,9 @@ num_trainers=P%-trainer_flags
 .core_data_start
 
 \\ Save game
-PAGE_ALIGN
-.L_8000	skip $C0
+;PAGE_ALIGN
+;.L_8000	skip $C0
+L_8000 = $c00
 L_801B	= L_8000 + $1B
 L_8020	= L_8000 + $20
 L_8025	= L_8000 + $25
