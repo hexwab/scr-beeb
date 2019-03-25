@@ -2687,7 +2687,7 @@ ELSE
 
 		JSR unpack_hall_of_fame
 ENDIF
-
+		jsr ensure_screen_enabled
 		ldx #$00		;991A A2 00
 		ldy #$00		;991C A0 00
 		jsr get_colour_map_ptr		;991E 20 FA 38
@@ -2774,9 +2774,9 @@ ENDIF
 		jmp L_9990		;99D2 4C 90 99
 .L_99D5	dec ZP_19		;99D5 C6 19
 		bpl L_9960		;99D7 10 87
-		lda #$00		;99D9 A9 00
-		sta write_char_pixel_offset		;99DB 8D D9 C3
-		jsr ensure_screen_enabled
+		;lda #$00		;99D9 A9 00
+		stz write_char_pixel_offset		;99DB 8D D9 C3
+		;jsr ensure_screen_enabled
 		; lda VIC_SCROLY		;99DE AD 11 D0
 		; ora #$10		;99E1 09 10			; 1=enable screen
 		; sta VIC_SCROLY		;99E3 8D 11 D0

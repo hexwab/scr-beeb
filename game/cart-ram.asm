@@ -1,6 +1,8 @@
 CPU 1
 .cart_start
-
+;; CHECKME
+write_char_next_col_mask = $10
+write_char_value = $11
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -569,21 +571,11 @@ rts
 
 .stunt_car_racer_glyph
 ; Calculate address of glyph data
-
-		asl A			;84D3 0A
-		rol ZP_F1		;84D4 26 F1
-		asl A			;84D6 0A
-		rol ZP_F1		;84D7 26 F1
-		asl A			;84D9 0A
-		rol ZP_F1		;84DA 26 F1
-		clc				;84DC 18
-		adc #LO(font_data - $100)		;84DD 69 C0
-		sta ZP_F0		;84DF 85 F0
-		lda ZP_F1		;84E1 A5 F1
-		and #$07		;84E3 29 07
-		adc #HI(font_data - $100)		;84E5 69 7F
-		sta ZP_F1		;84E7 85 F1
-
+	tax
+	lda glyph_table_lo,X
+	sta ZP_F0
+	lda glyph_table_hi,X
+	sta ZP_F1
 ; ZP_F0 contains pointer to glyph data
 
 ; Character x position *8
@@ -713,45 +705,79 @@ rts
 ; Start index into font glyph data
 
 		ldy #$00		;856D A0 00
+		ldx write_char_bit_offset
+		lda branch_offset_table,X
+		sta colbranch+1
 
 ; Zero next byte of glyph data to write
 
 .plot_glyph_loop
 
 ; Form 1bpp mask for this and next column, where 1=glyph and 0=screen.
-
-		lda #0
-		sta write_char_next_col_mask
-
+		stz write_char_next_col_mask
 		lda (ZP_F0),y			; 0=screen, 1=glyph
-		ldx write_char_bit_offset
-		beq shift_done
-
+		;ldx write_char_bit_offset
+		;beq shift_done
+.colbranch	bra colbranch ; self-modified
 .shift_loop
+
 		lsr a
 		ror write_char_next_col_mask
-		dex
-		bne shift_loop
+		lsr a
+		ror write_char_next_col_mask
+		lsr a
+		ror write_char_next_col_mask
+		lsr a
+		ror write_char_next_col_mask
+		lsr a
+		ror write_char_next_col_mask
+		lsr a
+		ror write_char_next_col_mask
+		lsr a
+		ror write_char_next_col_mask
+		;dex
+		;bne shift_loop
 
-.shift_done
+;.shift_done
 		sta write_char_curr_col_mask
 
 ; Screen byte 0 - top nibble of current column
-  		jsr handle_top_nibble
+		lsr a:lsr a:lsr a:lsr a
+		tax
+		lda nibble_to_beeb_byte,x
+		tax
+		and write_char_colour_mask
+		sta write_char_value
+		txa
+		eor #$ff
 		and (ZP_F4),y
 		ora write_char_value
 		sta (ZP_F4),y
 
 ; Screen byte 1 - bottom nibble of current column
   		lda write_char_curr_col_mask
-  		jsr handle_bottom_nibble
+		and #$0f
+		tax
+		lda nibble_to_beeb_byte,x
+		tax
+		and write_char_colour_mask
+		sta write_char_value
+		txa
+		eor #$ff
 		and (ZP_F6),y
 		ora write_char_value
 		sta (ZP_F6),y
 
 ; Screen byte 2 - top nibble of next column
   		lda write_char_next_col_mask
-		jsr handle_top_nibble
+		lsr a:lsr a:lsr a:lsr a
+		tax
+		lda nibble_to_beeb_byte,x
+		tax
+		and write_char_colour_mask
+		sta write_char_value
+		txa
+		eor #$ff
 		and (ZP_F8),y
 		ora write_char_value
 		sta (ZP_F8),y
@@ -806,19 +832,25 @@ rts
 .L_85C1	sta write_char_x_pos		;85C1 8D C5 85
 		rts				;85C4 60
 
+.branch_offset_table
+FOR I,0,7,1
+	equb (7-I)*3
+NEXT
+
+IF 0
 .handle_top_nibble
 lsr a:lsr a:lsr a:lsr a
 .handle_bottom_nibble
 and #$0f
 tax
 lda nibble_to_beeb_byte,x
-pha
-and write_char_colour_mask
+;pha
+;and write_char_colour_mask ; always $ff
 sta write_char_value			; 0=screen, 1=glyph
-pla
+;pla
 eor #$ff						; 0=glyph, 1=screen
 rts
-
+ENDIF
 .nibble_to_beeb_byte equb $00,$11,$22,$33,$44,$55,$66,$77,$88,$99,$aa,$bb,$cc,$dd,$ee,$ff
 }
 
@@ -829,12 +861,13 @@ rts
 .write_char_y_pos	equb $00		; Y pos
 
 .write_char_curr_col_mask	equb $00
-.write_char_next_col_mask	equb $00
+;.write_char_next_col_mask equb $00
+	;; defined above
 .write_char_byte_offset	equb $00
 .write_char_bit_offset	equb $00
 
-.write_char_value equb 0
-
+;.write_char_value equb 0
+	;; defined above
 ; Mode 1 mask for glyph foreground colour. Glyph pixels are index 3
 ; (set)/index 0 (reset) by default, ANDed with this value to select
 ; whichever foreground colour necessary.
@@ -848,6 +881,17 @@ rts
 .L_85C9	equb $00
 
 .L_85D0	equb $00
+IF 1
+PAGE_ALIGN
+.glyph_table_lo
+FOR I,0,127,1
+	EQUB LO(font_data-$100+I*8)
+NEXT
+.glyph_table_hi
+FOR I,0,127,1
+	EQUB HI(font_data-$100+I*8)
+NEXT
+ENDIF
 
 ; poll for	key.
 ; entry: X=key number (column in bits 0-3,	row in bits 3-6).
@@ -8372,13 +8416,32 @@ if (ascii_glyphs_3_end-ascii_glyphs_3_begin)>256:error "oops":endif
 
 ._unpack_hall_of_fame
 {
-    LDA #HI(screen1_address)
-    LDX #LO(hall_of_game_screen)
-    LDY #HI(hall_of_game_screen)
+	ldy #$4d
+	lda #$f0
+.loop1
+	sty loop2+2
+	sty loop2+5
+	ldx #0
+.loop2
+	sta $ee00,X
+	sta $ee80,X
+	inx
+	bpl loop2
+	iny
+	cpy #$79
+	bne loop1
+
+    LDX #LO(hall_of_fame_screen)
+    LDY #HI(hall_of_fame_screen)
+    JSR PUCRUNCH_UNPACK
+    LDX #LO(hall_of_fame_screen_bottom)
+    LDY #HI(hall_of_fame_screen_bottom)
     JMP PUCRUNCH_UNPACK
 }
 
-.hall_of_game_screen
-INCBIN "build/scr-beeb-hof.exo"
+.hall_of_fame_screen
+INCBIN "build/scr-beeb-hof-top.exo"
+.hall_of_fame_screen_bottom
+INCBIN "build/scr-beeb-hof-bottom.exo"
 
 .cart_end
