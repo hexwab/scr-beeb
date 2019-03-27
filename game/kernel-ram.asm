@@ -2685,6 +2685,7 @@ IF 0
 ELSE
 	\\ BEEB just clear by unpacking our screen
 
+		;lda $fe34:and #$fa:sta $fe34
 		JSR unpack_hall_of_fame
 ENDIF
 		jsr ensure_screen_enabled
@@ -2783,7 +2784,8 @@ ENDIF
 		jsr debounce_fire_and_wait_for_fire		;99E6 20 96 36
 		jsr enable_screen_and_set_irq50		;99E9 20 A5 3F
 		jmp set_up_screen_for_frontend		;99EC 4C 04 35
-
+		;lda $fe34:ora #5:sta $fe34
+		;rts
 .track_initials
 		equs "LRHBSSBRHJRCSJDB"
 		;equb $4C
@@ -6173,6 +6175,7 @@ L_EBDD	= L_EBE7 - $A			;!
 		sty ZP_31		;EE37 84 31 Y = num items
 		stx ZP_30		;EE39 86 30 X = base index
 		sta ZP_0C		;EE3B 85 0C A = selected item
+		lda #$ff:jsr set_write_char_colour_mask
 		sec
 		ror menu_lastitem
 		jsr set_up_screen_for_menu		;EE3D 20 1F 35
