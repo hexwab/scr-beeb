@@ -753,15 +753,20 @@ ENDIF
 		; BEEB *16 for MODE 1 bytes per char
 		ASL A:ROL ZP_C6
 		ASL A:ROL ZP_C6
-		ASL A:ROL ZP_C6
-		ASL A:ROL ZP_C6
-
+		;ASL A:ROL ZP_C6
+		;ASL A:ROL ZP_C6
 		sta ZP_14		;391B 85 14
 		inx				;391D E8
 		lda menu_colourmap_table,X	;391E BD 44 39
 		inx				;3921 E8
 		ldx ZP_C6
 .L_3922
+		sta (ZP_1E),Y	;3922 91 1E
+		iny
+		sta (ZP_1E),Y	;3922 91 1E
+		iny
+		sta (ZP_1E),Y	;3922 91 1E
+		iny
 		sta (ZP_1E),Y	;3922 91 1E
 		dec ZP_14
 		beq done

@@ -298,12 +298,27 @@ endif
 		jmp write_char		;108D 4C 6F 84
 }
 
-; returns old value in X.
+; no longer returns old value in X.
 ._set_write_char_colour_mask
-{
-ldx write_char_colour_mask
-sta write_char_colour_mask
-rts
+	{
+	;lda #$f0
+	sta write_char_colour_mask
+	ldx #15
+	lda #&ff
+.loop
+	pha
+	and write_char_colour_mask
+	sta nibble_to_beeb_byte2,X
+	pla
+	pha
+	eor #$ff
+	sta nibble_to_beeb_byte,X
+	pla
+	sec
+	sbc #&11
+	dex
+	bpl loop
+	rts
 }
 
 
@@ -492,14 +507,14 @@ rts
 		sta L_85D1		;84C1 8D D1 85
 
 		lda write_char_colour_mask:pha
-		lda #$f0:sta write_char_colour_mask
+		lda #$f0:jsr set_write_char_colour_mask
 
 		lda #$21		;84C4 A9 20
 		sta L_85C7		;84C6 8D C7 85
 		
 		jsr write_char_body		;84C9 20 85 84
 
-		pla:sta write_char_colour_mask
+		pla:jsr set_write_char_colour_mask
 
 		lsr L_85D1		;84CC 4E D1 85
 		dec write_char_x_pos		;84CF CE C5 85
@@ -581,6 +596,7 @@ rts
 ; Character x position *8
 
 .got_glyph_address
+IF 0
 		lda write_char_x_pos		;84E9 AD C5 85
 		asl A			;84EC 0A
 		asl A			;84ED 0A
@@ -666,6 +682,30 @@ rts
 		bcc bit_ok
 		inc ZP_F5
 		.bit_ok
+ELSE
+	lda write_char_x_pos
+	tax
+	lda char_x_lookup_hi,X
+	sta ZP_F5
+	lda write_char_pixel_offset
+	asl A
+	clc
+	adc char_x_lookup_lo,X
+	sta ZP_F4
+	bcc noadd
+	inc ZP_F5
+.noadd	and #7
+	lsr A
+	sta write_char_bit_offset
+	ldx write_char_y_pos
+	lda ZP_F4
+	and #$f8
+	adc char_y_lookup_lo,X
+	sta ZP_F4
+	lda ZP_F5
+	adc char_y_lookup_hi,X
+	sta ZP_F5
+ENDIF	
 
 ;  ZP_F4 contains screen write address
 
@@ -735,51 +775,33 @@ rts
 		ror write_char_next_col_mask
 		lsr a
 		ror write_char_next_col_mask
-		;dex
-		;bne shift_loop
 
-;.shift_done
 		sta write_char_curr_col_mask
 
 ; Screen byte 0 - top nibble of current column
 		lsr a:lsr a:lsr a:lsr a
 		tax
-		lda nibble_to_beeb_byte,x
-		tax
-		and write_char_colour_mask
-		sta write_char_value
-		txa
-		eor #$ff
-		and (ZP_F4),y
-		ora write_char_value
+		lda (ZP_F4),y
+		and nibble_to_beeb_byte,x
+		ora nibble_to_beeb_byte2,x
 		sta (ZP_F4),y
 
 ; Screen byte 1 - bottom nibble of current column
   		lda write_char_curr_col_mask
 		and #$0f
 		tax
-		lda nibble_to_beeb_byte,x
-		tax
-		and write_char_colour_mask
-		sta write_char_value
-		txa
-		eor #$ff
-		and (ZP_F6),y
-		ora write_char_value
+		lda (ZP_F6),y
+		and nibble_to_beeb_byte,x
+		ora nibble_to_beeb_byte2,x
 		sta (ZP_F6),y
 
 ; Screen byte 2 - top nibble of next column
   		lda write_char_next_col_mask
 		lsr a:lsr a:lsr a:lsr a
 		tax
-		lda nibble_to_beeb_byte,x
-		tax
-		and write_char_colour_mask
-		sta write_char_value
-		txa
-		eor #$ff
-		and (ZP_F8),y
-		ora write_char_value
+		lda (ZP_F8),y
+		and nibble_to_beeb_byte,x
+		ora nibble_to_beeb_byte2,x
 		sta (ZP_F8),y
 		
 ; Check flag L_85D0
@@ -851,8 +873,26 @@ sta write_char_value			; 0=screen, 1=glyph
 eor #$ff						; 0=glyph, 1=screen
 rts
 ENDIF
-.nibble_to_beeb_byte equb $00,$11,$22,$33,$44,$55,$66,$77,$88,$99,$aa,$bb,$cc,$dd,$ee,$ff
 }
+.nibble_to_beeb_byte skip 16
+.nibble_to_beeb_byte2 skip 16
+
+.char_x_lookup_lo
+	FOR I,0,45,1
+	EQUB LO((I*14))
+	NEXT
+.char_x_lookup_hi
+	FOR I,0,45,1
+	EQUB HI((I*14))
+	NEXT
+.char_y_lookup_lo
+	FOR I,0,25,1
+	EQUB LO($4000+(I*640))
+	NEXT
+.char_y_lookup_hi
+	FOR I,0,25,1
+	EQUB HI($4000+(I*640))
+	NEXT
 
 .write_char_set_pos	equb $00		; last VDU char
 .write_char_pos_idx	equb $00		; VDU index
