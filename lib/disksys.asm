@@ -85,7 +85,9 @@ EQUD 0
 .disksys_copy_block
 {
     STA read_from+2
+    STA read_from2+2
     STX write_to+2
+    STX write_to2+2
 
     \ We always copy a complete number of pages
 
@@ -94,12 +96,18 @@ EQUD 0
     LDA &FF00, X
     .write_to
     STA &FF00, X
+    .read_from2
+    LDA &FF80, X
+    .write_to2
+    STA &FF80, X
     INX
-    BNE read_from
+    BPL read_from
     INC read_from+2
     INC write_to+2
+    INC read_from2+2
+    INC write_to2+2
     DEY
-    BNE read_from
+    BNE read_from-2
 }
 .disksys_copy_block_return
     RTS
