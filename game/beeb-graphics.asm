@@ -1306,7 +1306,7 @@ rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ._graphics_draw_debug_framerate
-IF _DEBUG
+IF _FRAMERATE
 {
 sec
 lda vsync_counter

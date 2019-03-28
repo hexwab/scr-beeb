@@ -52,6 +52,7 @@ MAX_LOADABLE_ROM_SIZE = $8000 - disksys_loadto_addr
 _TODO = FALSE
 _NOT_BEEB = FALSE
 _DEBUG = FALSE
+_FRAMERATE = FALSE
 
 ; Both are one digit. We're unlikely to run out. Even having
 ; major/minor is probably overkill.

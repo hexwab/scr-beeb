@@ -1245,7 +1245,7 @@ NEXT
 
 .L_3D69
 		jsr graphics_draw_in_game_text_sprites
-IF _DEBUG
+IF _FRAMERATE
 		jsr graphics_draw_debug_framerate
 ENDIF
 		jsr flip_display_page
