@@ -2554,42 +2554,70 @@ equb %11110000 ; %10101010 ; $AA - 2 2 2 2
 lda #0:sta ZP_16		; ZP_16 = X coordinate
 .loop
 
-ldy ZP_16			; Y = X coordinate
+tay			; Y = X coordinate
 lda L_0200+1,y			; minimum
 cmp #8
-bcc next_column
-
-sbc #7				; 7 = top of screen
-tax				; X = # rows to fill
-
-tya:and #%01111100:asl A	; A=X/4*8, C=0
-adc #$A0:sta ZP_20		; +lsb $xxa0 (top left of display)
-lda #$42:ora ZP_12:adc #$00:sta ZP_21 ; +$4200 or $6200
-
-.fill_column
-
-lda #%11110000			; sky
-
-ldy #0
-sta (ZP_20),y:iny
-sta (ZP_20),y:iny
-sta (ZP_20),y:iny
-sta (ZP_20),y:iny
-sta (ZP_20),y:iny
-sta (ZP_20),y:iny
-sta (ZP_20),y:iny
-sta (ZP_20),y
-
-lda ZP_20:adc #$40:sta ZP_20
-lda ZP_21:adc #$01:sta ZP_21
-
-dex
-bne fill_column
+bcs do_column
 
 .next_column
 ; C=0
 lda ZP_16:adc #4:sta ZP_16
 bpl loop
+rts
+;sbc #7				; 7 = top of screen
+;tax				; X = # rows to fill
+;ldx #20
+.do_column
+asl A
+tax
+tya
+asl A
+tay
+lda ZP_12:bne screen2
+.screen1
+lda #%11110000			; sky
+jmp (fillbranches1-16,X)
+.screen2
+lda #%11110000			; sky
+jmp (fillbranches2-16,X)
+.screen1_1
+FOR i,0,15,1
+FOR j,0,7,1
+sta $42a0+(15-i)*$140+j,Y
+NEXT
+NEXT
+jmp next_column
+.screen2_1
+FOR i,0,15,1
+FOR j,0,7,1
+sta $62a0+(15-i)*$140+j,Y
+NEXT
+NEXT
+jmp next_column
+;ldy #0
+;sta (ZP_20),y:iny
+;sta (ZP_20),y:iny
+;sta (ZP_20),y:iny
+;sta (ZP_20),y:iny
+;sta (ZP_20),y:iny
+;sta (ZP_20),y:iny
+;sta (ZP_20),y:iny
+;sta (ZP_20),y
+
+;lda ZP_20:adc #$40:sta ZP_20
+;lda ZP_21:adc #$01:sta ZP_21
+
+;dex
+;bne fill_column
+
+.fillbranches1
+FOR i,0,15,1
+EQUW screen1_1+(15-i)*3*8
+NEXT
+.fillbranches2
+FOR i,0,15,1
+EQUW screen2_1+(15-i)*3*8
+NEXT
 }
 
 .update_colour_map			; in Cart
@@ -4416,31 +4444,31 @@ equb $74						; STEER LEFT
 .L_1486	txa				;1486 8A
 		asl A			;1487 0A
 		tay				;1488 A8
-		lda L_14C2,X	;1489 BD C2 14
-		sta VIC_SP0X,Y	;148C 99 00 D0
-		lda L_14C8,X	;148F BD C8 14
-		sta VIC_SP0Y,Y	;1492 99 01 D0
+		;lda L_14C2,X	;1489 BD C2 14
+		;sta VIC_SP0X,Y	;148C 99 00 D0
+		;lda L_14C8,X	;148F BD C8 14
+		;sta VIC_SP0Y,Y	;1492 99 01 D0
 		lda L_14B6,X	;1495 BD B6 14
 		sta vic_sprite_ptr0,X	;1498 9D F8 5F
-		lda L_14BC,X	;149B BD BC 14
-		sta VIC_SP0COL,X	;149E 9D 27 D0
+		;lda L_14BC,X	;149B BD BC 14
+		;sta VIC_SP0COL,X	;149E 9D 27 D0
 		dex				;14A1 CA
 		cpx #$02		;14A2 E0 02
 		bcs L_1486		;14A4 B0 E0
-		lda #$00		;14A6 A9 00
-		sta VIC_SPMC0		;14A8 8D 25 D0
-		lda #$01		;14AB A9 01
-		sta VIC_SPMC1		;14AD 8D 26 D0
+		;lda #$00		;14A6 A9 00
+		;sta VIC_SPMC0		;14A8 8D 25 D0
+		;lda #$01		;14AB A9 01
+		;sta VIC_SPMC1		;14AD 8D 26 D0
 		lda #$FC		;14B0 A9 FC
 		sta ZP_6E		;14B2 85 6E
-		sta VIC_SPENA		;14B4 8D 15 D0
+		;sta VIC_SPENA		;14B4 8D 15 D0
 		rts				;14B7 60
 		
 .L_14B8	equb $64,$63,$69,$67
 L_14B6 = L_14B8-2
-.L_14BC	equb $68,$60,$03,$03,$0C,$0C
-.L_14C2	equb $0C,$0C,$38,$20,$38,$38
-.L_14C8	equb $20,$20,$BB,$BB,$8C,$77,$8C,$77
+;.L_14BC	equb $68,$60,$03,$03,$0C,$0C
+;.L_14C2	equb $0C,$0C,$38,$20,$38,$38
+;.L_14C8	equb $20,$20,$BB,$BB,$8C,$77,$8C,$77
 }
 
 ; Draw misc stuff.
