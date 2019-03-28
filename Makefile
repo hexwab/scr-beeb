@@ -134,7 +134,7 @@ clean:
 
 	$(MKDIR_P) "./build"
 	$(PYTHON) bin/png2bbc.py --quiet -o build/scr-beeb-menu.dat --palette 0143 ./graphics/scr-beeb-menu.png 1
-	$(EXO_AND_ARGS) build/scr-beeb-menu.dat@0x4000 -o build/scr-beeb-menu.exo
+	$(EXO_AND_ARGS) build/scr-beeb-menu.dat@0x3000 -o build/scr-beeb-menu.exo
 
 ##########################################################################
 ##########################################################################
@@ -200,9 +200,9 @@ clean:
 
 	$(PYTHON) bin/png2bbc.py --quiet -o build/scr-beeb-hof.dat --palette 0143 ./graphics/HallFame_BBC.png 1
 	dd if=build/scr-beeb-hof.dat bs=256 count=13 >build/scr-beeb-hof-top.dat
-	dd if=build/scr-beeb-hof.dat bs=256 skip=57 >build/scr-beeb-hof-bottom.dat
-	$(EXO_AND_ARGS) build/scr-beeb-hof-top.dat@0x4000 -o build/scr-beeb-hof-top.exo
-	$(EXO_AND_ARGS) build/scr-beeb-hof-bottom.dat@0x7900 -o build/scr-beeb-hof-bottom.exo
+	dd if=build/scr-beeb-hof.dat bs=128 skip=115 >build/scr-beeb-hof-bottom.dat
+	$(EXO_AND_ARGS) build/scr-beeb-hof-top.dat@0x3000 -o build/scr-beeb-hof-top.exo
+	$(EXO_AND_ARGS) build/scr-beeb-hof-bottom.dat@0x7880 -o build/scr-beeb-hof-bottom.exo
 
 ##########################################################################
 ##########################################################################
