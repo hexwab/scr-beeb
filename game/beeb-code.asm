@@ -722,6 +722,7 @@ EQUW 0
 
 .beeb_set_mode_5_full
 {
+    lda #13:sta beeb_max_crtc_reg
     LDX #LO(beeb_mode5_crtc_regs)
     LDY #HI(beeb_mode5_crtc_regs)
     JSR beeb_set_crtc_regs

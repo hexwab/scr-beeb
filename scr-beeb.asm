@@ -1321,6 +1321,7 @@ PRINT "SAFE TO LOAD TO =", ~P%
 
 screen1_address = $4000
 screen2_address = $6000
+frontend_address = $3000
 
 L_5740	= screen1_address+$1740
 L_7740	= screen2_address+$1740

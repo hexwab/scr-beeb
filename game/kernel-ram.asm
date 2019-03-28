@@ -2046,7 +2046,7 @@ ENDIF
 		bne wipe_loop		;9910 D0 FB
 		dec ZP_1F		;9912 C6 1F
 		ldx ZP_1F		;9914 A6 1F
-		cpx #$40		;9916 E0 40
+		cpx #HI(frontend_address)		;9916 E0 40
 		bcs wipe_loop		;9918 B0 F3
 	}
 
@@ -2399,7 +2399,7 @@ EQUD $FFFF
 		jsr cart_menu_colour_map_stuff		;36BA 20 C4 38
 		lda #$03		;36BD A9 03
 		sta L_C360		;36BF 8D 60 C3
-		lda #$0A		;36C2 A9 0A
+		lda #$0E		;36C2 A9 0A
 		sta ZP_19		;36C4 85 19
 		lda #$09		;36C6 A9 09
 		sta ZP_1A		;36C8 85 1A
@@ -2407,14 +2407,15 @@ EQUD $FFFF
 		sta ZP_17		;36CC 85 17
 .L_36CE
 		jsr plot_menu_option_3		;3717 20 54 38
-		jsr clear_write_char_half_row_flag		;371A 20 1F 36
-
+		jsr set_write_char_half_row_flag		;371A 20 1F 36
 		ldy ZP_1A		;36CE A4 1A
+		inc ZP_1A		;36D3 E6 1A
 		jsr print_division_type		;36D0 20 54 35
 		inc ZP_1A		;36D3 E6 1A
+		jsr clear_write_char_half_row_flag		;371A 20 1F 36
 		lda #$00		;36D5 A9 00
 		sta ZP_08		;36D7 85 08
-.L_36D9	ldy #$06		;36D9 A0 06
+.L_36D9		ldy #$06		;36D9 A0 06
 		cmp #$02		;36DB C9 02
 		bne L_36E1		;36DD D0 02
 		ldy #$15		;36DF A0 15
@@ -2689,24 +2690,24 @@ ELSE
 		JSR unpack_hall_of_fame
 ENDIF
 		jsr ensure_screen_enabled
-		ldx #$00		;991A A2 00
-		ldy #$00		;991C A0 00
-		jsr get_colour_map_ptr		;991E 20 FA 38
-		ldx #$18		;9921 A2 18
-		lda #$06		;9923 A9 06
+		;ldx #$00		;991A A2 00
+		;ldy #$00		;991C A0 00
+		;jsr get_colour_map_ptr		;991E 20 FA 38
+		;ldx #$18		;9921 A2 18
+		;lda #$06		;9923 A9 06
 	;	jsr fill_colourmap_solid		;9925 20 16 39
 		lda #$08		;9928 A9 08
 		sta ZP_19		;992A 85 19
-.L_992C	ldx #$24		;992C A2 24
-		lda #$08		;992E A9 08
+;.L_992C	ldx #$24		;992C A2 24
+		;lda #$08		;992E A9 08
 	;	jsr fill_colourmap_solid		;9930 20 16 39
-		dec ZP_19		;9933 C6 19
-		bne L_992C		;9935 D0 F5
-		ldx #$34		;9937 A2 34
-		lda #$01		;9939 A9 01
+		;dec ZP_19		;9933 C6 19
+		;bne L_992C		;9935 D0 F5
+		;ldx #$34		;9937 A2 34
+		;lda #$01		;9939 A9 01
 	;	jsr fill_colourmap_solid		;993B 20 16 39
-		lda #$01		;993E A9 01
-		sta write_char_pixel_offset		;9940 8D D9 C3
+		;lda #$01		;993E A9 01
+		;sta write_char_pixel_offset		;9940 8D D9 C3
 		lda #$02		;9943 A9 02
 		sta write_char_pixel_offset		;9945 8D D9 C3
 		ldx #$3B		;9948 A2 3B		; "HALL of FAME"
@@ -2724,7 +2725,7 @@ ENDIF
 		sbc ZP_19		;9963 E5 19
 		asl A			;9965 0A
 		clc				;9966 18
-		adc #$08		;9967 69 08
+		adc #$0B		;9967 69 08
 		tay				;9969 A8
 		ldx #$00		;996A A2 00
 		jsr cart_set_text_cursor		;996C 20 6B 10

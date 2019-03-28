@@ -1743,14 +1743,14 @@ rts
 	EQUB &28				; R3  sync width 40 = &28
 	EQUB 38					; R4  vertical total
 	EQUB 0					; R5  vertical total adjust
-	EQUB 25					; R6  vertical displayed
-	EQUB 32					; R7  vertical position; 35=top of screen
+	EQUB 32					; R6  vertical displayed
+	EQUB 35					; R7  vertical position; 35=top of screen
 	EQUB &0					; R8  interlace; &30 = HIDE SCREEN
 	EQUB 7					; R9  scanlines per row
 	EQUB 32					; R10 cursor start
 	EQUB 8					; R11 cursor end
-	EQUB HI(screen1_address/8)	; R12 screen start address, high
-	EQUB LO(screen1_address/8)	; R13 screen start address, low
+	EQUB HI(frontend_address/8)	; R12 screen start address, high
+	EQUB LO(frontend_address/8)	; R13 screen start address, low
 }
 
 }

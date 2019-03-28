@@ -700,10 +700,10 @@ ELSE
 	ldx write_char_y_pos
 	lda ZP_F4
 	and #$f8
-	adc char_y_lookup_lo,X
+	adc mode1_screen_LO,X
 	sta ZP_F4
 	lda ZP_F5
-	adc char_y_lookup_hi,X
+	adc mode1_screen_HI,X
 	sta ZP_F5
 ENDIF	
 
@@ -884,14 +884,6 @@ ENDIF
 .char_x_lookup_hi
 	FOR I,0,45,1
 	EQUB HI((I*14))
-	NEXT
-.char_y_lookup_lo
-	FOR I,0,25,1
-	EQUB LO($4000+(I*640))
-	NEXT
-.char_y_lookup_hi
-	FOR I,0,25,1
-	EQUB HI($4000+(I*640))
 	NEXT
 
 .write_char_set_pos	equb $00		; last VDU char
@@ -4286,9 +4278,9 @@ equb $74						; STEER LEFT
 		equb "Best Lap : ",$FF
 		equb $1F,$10,$01
 		equb "HALL of FAME",$FF
-		equb $1F,$10,$03
+		equb $1F,$10,$06
 		equb "SUPER LEAGUE",$FF
-		equb $1F,$00,$06
+		equb $1F,$00,$09
 		equb "TRACK  DRIVER   LAP-TIME    DRIVER  RACE-TIME",$FF
 }
 
@@ -5435,8 +5427,8 @@ jmp start_of_frame_finish
 MENU_AREA_LEFT = 4
 MENU_AREA_TOP = 9
 MENU_AREA_WIDTH = 24
-MENU_AREA_HEIGHT = 16
-MENU_AREA_ADDRESS = screen1_address + MENU_AREA_TOP * $280 + MENU_AREA_LEFT * 16
+MENU_AREA_HEIGHT = 22
+MENU_AREA_ADDRESS = frontend_address + MENU_AREA_TOP * $280 + MENU_AREA_LEFT * 16
 
 .clear_menu_area			; HAS DLL
 {
@@ -7664,6 +7656,8 @@ ENDIF
 
 .set_up_colour_map_for_track_preview
 {
+	rts
+IF 0
 		lda L_C76B		;3A77 AD 6B C7
 		sta L_3AEE		;3A7A 8D EE 3A
 		sta L_3AF2		;3A7D 8D F2 3A
@@ -7717,6 +7711,7 @@ ENDIF
 .L_3AF2	equb $05,$01,$1F,$01,$CB,$02,$BB,$01,$CB,$24,$1F,$01,$CB,$02,$BB,$26
 		equb $CB,$0A,$BB,$01,$FB,$14,$1B,$01,$FB,$CA,$04,$12,$BB,$01,$FB,$14
 		equb $10,$01,$FB,$12,$BB,$01,$FB,$14,$CB,$01,$FB,$09,$BB,$28,$BB,$FF
+ENDIF
 }
 
 ; *****************************************************************************
@@ -8133,6 +8128,7 @@ ENDIF
 
 ; menu option y rows
 .L_3837	equb $0D,$10,$13,$16,$10,$13,$10,$0F,$14,$17,$0A,$0E,$12,$16
+equb $0B,$10,$15,$1A
 .L_3845	equb $0E,$0B,$11
 
 
@@ -8456,7 +8452,7 @@ if (ascii_glyphs_3_end-ascii_glyphs_3_begin)>256:error "oops":endif
 
 ._unpack_hall_of_fame
 {
-	ldy #$4d
+	ldy #$3d
 	lda #$f0
 .loop1
 	sty loop2+2
@@ -8468,7 +8464,7 @@ if (ascii_glyphs_3_end-ascii_glyphs_3_begin)>256:error "oops":endif
 	inx
 	bpl loop2
 	iny
-	cpy #$79
+	cpy #$7b
 	bne loop1
 
     LDX #LO(hall_of_fame_screen)

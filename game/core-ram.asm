@@ -922,13 +922,13 @@ ENDIF
 }
 
 .mode1_screen_LO
-FOR y,0,24,1
-EQUB LO(screen1_address + y*$280)
+FOR y,0,31,1
+EQUB LO(frontend_address + y*$280)
 NEXT
 
 .mode1_screen_HI
-FOR y,0,24,1
-EQUB HI(screen1_address + y*$280)
+FOR y,0,31,1
+EQUB HI(frontend_address + y*$280)
 NEXT
 
 ; *****************************************************************************
