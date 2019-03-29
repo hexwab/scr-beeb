@@ -251,7 +251,7 @@ endif
 ; }
 
 .L_8428_in_cart
-{
+{;copy surround from screen2 to screen1 
 		cmp #$02		;8428 C9 02
 		bcc L_8453		;842A 90 27
 		lda #LO(L_5740)		;842C A9 40
@@ -1638,7 +1638,7 @@ ENDIF
 ; 		sta VIC_IRQMASK		;891D 8D 1A D0
 ; 		rts				;8920 60
 }
-
+; used for track name in preview screen
 ; fill scanlines
 ; entry: A=byte to	write, X=LSB of	dest, Y=MSB of dest, byte_52=# lines
 .fill_64s			; in Cart
@@ -2066,9 +2066,11 @@ ENDIF
     equb $00 ; was $00 - 0 0 0 0
 
 }
-
 .L_8CD0_from_sysctl			; in Cart
 {
+; fixup horizon for in-air AI car?
+{
+; bound min/max Y coords in $60/$61 to between $40 and $BF (128 vertical pixels)
 		lda ZP_61		;8CD0 A5 61
 		cmp #$C0		;8CD2 C9 C0
 		bcc L_8CD8		;8CD4 90 02
@@ -2079,6 +2081,7 @@ ENDIF
 		bcs L_8CE2		;8CDE B0 02
 		lda #$40		;8CE0 A9 40
 .L_8CE2	sta ZP_60		;8CE2 85 60
+}
 		cmp ZP_61		;8CE4 C5 61
 		beq L_8CEA		;8CE6 F0 02
 		bcs L_8D0F		;8CE8 B0 25
@@ -5565,7 +5568,7 @@ MENU_AREA_ADDRESS = frontend_address + MENU_AREA_TOP * $280 + MENU_AREA_LEFT * 1
 		jsr kernel_update_boosting		;1CC7 20 0F F6
 		rts				;1CCA 60
 }
-
+; calculate horizon when off track?
 .L_1CCB				; HAS DLL
 {
 		lda L_0124		;1CCB AD 24 01

@@ -4468,7 +4468,7 @@ ENDIF
 .L_E191	sta SID_CUTHI		;E191 8D 16 D4
 		rts				;E194 60
 }
-
+; maybe draw AI car
 .L_E195
 {
 		lda L_C36A		;E195 AD 6A C3
@@ -4486,7 +4486,7 @@ ENDIF
 		sta L_C366		;E1AD 8D 66 C3
 		rts				;E1B0 60
 }
-
+; really draw AI car
 .L_E1B1
 {
 		lsr L_C366		;E1B1 4E 66 C3
@@ -4607,7 +4607,7 @@ ENDIF
 		bpl L_E25F		;E291 10 CC
 		rts				;E293 60
 }
-
+; AI car drawing stuff
 .L_E294_in_kernel	\\ only called from Kernel fns
 {
 		bit ZP_EA		;E294 24 EA
@@ -4788,12 +4788,14 @@ ENDIF
 		ldx #$00		;E3D3 A2 00
 		jsr L_E31A_in_kernel		;E3D5 20 1A E3
 \\
+; draw AI car wheels	
 .L_E3D8_with_draw_line		\\ only called from Kernel fns
 {
 		ldx #$40		;E3D8 A2 40
 		ldy #$43		;E3DA A0 43
 		jsr L_FEAB_with_draw_line		;E3DC 20 AB FE
 		bit ZP_EA		;E3DF 24 EA
+	;; front-to-back or back-to-front?
 		bmi L_E3F4		;E3E1 30 11
 		ldx #$43		;E3E3 A2 43
 		ldy #$42		;E3E5 A0 42
@@ -8397,7 +8399,8 @@ L_FBD5	= *-2			;! _SELF_MOD from set_linedraw_colour
 .L_FC14	equb $00
 		equb $80
 }
-
+; 2C = BIT opcode, no lines
+; 3D = AND opcode, normal lines
 .set_linedraw_op
 {
 		sta L_F8DE		;FC16 8D DE F8  _SELF_MOD
@@ -8505,7 +8508,7 @@ L_FBD5	= *-2			;! _SELF_MOD from set_linedraw_colour
 		sta L_FADA,X	;FCAC 9D DA FA  +9=fae3 +b=fae3 ;
 		sta L_FBC1,X	;FCAF 9D C1 FB  +9=fbca +b=fbcc
 		rts				;FCB2 60
-
+; erase horizon_table? CHECKME
 .L_FCB3_in_kernel
 {
 		ldx #$3F		;FCB3 A2 3F
@@ -8763,7 +8766,7 @@ L_FBD5	= *-2			;! _SELF_MOD from set_linedraw_colour
 		beq draw_line		;FEA6 F0 21
 		jmp L_FCC5_in_kernel		;FEA8 4C C5 FC
 }
-
+; draw line, but update ZP_60 and ZP_61 with min/max Y coord respectively
 .L_FEAB_with_draw_line
 {
 		lda L_A200,X	;FEAB BD 00 A2
@@ -8782,6 +8785,8 @@ L_FBD5	= *-2			;! _SELF_MOD from set_linedraw_colour
 		sta ZP_61		;FEC7 85 61
 }
 \\
+; inputs: X,Y: vertex numbers of start/end point
+; actual coords are in A200+n (Y coord) and A24C+n (X coord)
 .draw_line
 		lda L_A24C,X	;FEC9 BD 4C A2
 		cmp L_A24C,Y	;FECC D9 4C A2
@@ -8801,11 +8806,14 @@ L_FBD5	= *-2			;! _SELF_MOD from set_linedraw_colour
 		sta ZP_4E		;FEEF 85 4E
 		lda L_A200,Y	;FEF1 B9 00 A2
 		sta ZP_4F		;FEF4 85 4F
+; now (8A,4E) has coords of startpoint, (50,4F) has coords of endpoint
+; coords are sorted such that leftmost point is first
 \\
 .L_FEF6
 {
 		bit L_C3AD		;FEF6 2C AD C3
 		bpl L_FF32		;FEF9 10 37
+; do bounds check plus other stuff if required?
 		lda ZP_50		;FEFB A5 50
 		cmp #$C0		;FEFD C9 C0
 		bcs L_FF07		;FEFF B0 06
@@ -8835,6 +8843,7 @@ L_FBD5	= *-2			;! _SELF_MOD from set_linedraw_colour
 		inx				;FF2D E8
 .L_FF2E	cpx ZP_89		;FF2E E4 89
 		bcc L_FF2A		;FF30 90 F8
+;  always
 .L_FF32	lda ZP_50		;FF32 A5 50
 		sec				;FF34 38
 		sbc ZP_8A		;FF35 E5 8A
